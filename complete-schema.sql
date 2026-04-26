@@ -3768,6 +3768,231 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE public.slo_configurations ENABLE ROW LEVEL SECURITY;
 
+
+-- ============================================================================
+-- Applied migrations (baked in so fresh installs are secure on day one)
+--
+-- Source of truth: supabase/migrations/. Anything below this line is the
+-- exact contents of every numbered migration we have shipped, in order. If
+-- you are running this file on a brand-new database you do NOT need to apply
+-- anything from supabase/migrations/ separately.
+-- ============================================================================
+
+-- ---------------------------------------------------------------------------
+-- 0001_security_hardening.sql
+-- ---------------------------------------------------------------------------
+
+BEGIN;
+
+-- 1. SECURITY DEFINER search_path lockdown
+ALTER FUNCTION public.check_ai_scan_tokens(uuid, integer)            SET search_path = public, pg_temp;
+ALTER FUNCTION public.check_and_update_billing_tiers()               SET search_path = public, pg_temp;
+ALTER FUNCTION public.clean_expired_ai_cache()                       SET search_path = public, pg_temp;
+ALTER FUNCTION public.consume_ai_scan_tokens(uuid, integer)          SET search_path = public, pg_temp;
+ALTER FUNCTION public.get_user_ai_scan_status(uuid)                  SET search_path = public, pg_temp;
+ALTER FUNCTION public.get_user_organization_id()                     SET search_path = public, pg_temp;
+ALTER FUNCTION public.handle_new_user()                              SET search_path = public, pg_temp;
+ALTER FUNCTION public.set_billing_expiration()                       SET search_path = public, pg_temp;
+ALTER FUNCTION public.update_cache_access(uuid)                      SET search_path = public, pg_temp;
+ALTER FUNCTION public.user_has_org_access(uuid)                      SET search_path = public, pg_temp;
+
+-- 2. RLS — enable + policies on the 5 unprotected tables
+ALTER TABLE public.team_invitations ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Org members can view invitations" ON public.team_invitations;
+CREATE POLICY "Org members can view invitations"
+  ON public.team_invitations FOR SELECT
+  USING (organization_id = public.get_user_organization_id());
+
+DROP POLICY IF EXISTS "Org admins can create invitations" ON public.team_invitations;
+CREATE POLICY "Org admins can create invitations"
+  ON public.team_invitations FOR INSERT
+  WITH CHECK (
+    organization_id = public.get_user_organization_id()
+    AND EXISTS (
+      SELECT 1 FROM public.organization_memberships m
+      WHERE m.user_id = auth.uid()
+        AND m.organization_id = team_invitations.organization_id
+        AND m.role IN ('owner', 'admin')
+    )
+  );
+
+DROP POLICY IF EXISTS "Org admins can update invitations" ON public.team_invitations;
+CREATE POLICY "Org admins can update invitations"
+  ON public.team_invitations FOR UPDATE
+  USING (
+    organization_id = public.get_user_organization_id()
+    AND EXISTS (
+      SELECT 1 FROM public.organization_memberships m
+      WHERE m.user_id = auth.uid()
+        AND m.organization_id = team_invitations.organization_id
+        AND m.role IN ('owner', 'admin')
+    )
+  );
+
+DROP POLICY IF EXISTS "Org admins can revoke invitations" ON public.team_invitations;
+CREATE POLICY "Org admins can revoke invitations"
+  ON public.team_invitations FOR DELETE
+  USING (
+    organization_id = public.get_user_organization_id()
+    AND EXISTS (
+      SELECT 1 FROM public.organization_memberships m
+      WHERE m.user_id = auth.uid()
+        AND m.organization_id = team_invitations.organization_id
+        AND m.role IN ('owner', 'admin')
+    )
+  );
+
+DROP POLICY IF EXISTS "Org members can view billing" ON public.billing_integrations;
+CREATE POLICY "Org members can view billing"
+  ON public.billing_integrations FOR SELECT
+  USING (organization_id = public.get_user_organization_id());
+
+DROP POLICY IF EXISTS "Org owners can manage billing" ON public.billing_integrations;
+CREATE POLICY "Org owners can manage billing"
+  ON public.billing_integrations FOR ALL
+  USING (
+    organization_id = public.get_user_organization_id()
+    AND EXISTS (
+      SELECT 1 FROM public.organization_memberships m
+      WHERE m.user_id = auth.uid()
+        AND m.organization_id = billing_integrations.organization_id
+        AND m.role IN ('owner', 'admin')
+    )
+  )
+  WITH CHECK (
+    organization_id = public.get_user_organization_id()
+    AND EXISTS (
+      SELECT 1 FROM public.organization_memberships m
+      WHERE m.user_id = auth.uid()
+        AND m.organization_id = billing_integrations.organization_id
+        AND m.role IN ('owner', 'admin')
+    )
+  );
+
+ALTER TABLE public.incident_sequences ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Org members manage incident_sequences" ON public.incident_sequences;
+CREATE POLICY "Org members manage incident_sequences"
+  ON public.incident_sequences FOR ALL
+  USING (organization_id = public.get_user_organization_id())
+  WITH CHECK (organization_id = public.get_user_organization_id());
+
+ALTER TABLE public.change_sequences ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Org members manage change_sequences" ON public.change_sequences;
+CREATE POLICY "Org members manage change_sequences"
+  ON public.change_sequences FOR ALL
+  USING (organization_id = public.get_user_organization_id())
+  WITH CHECK (organization_id = public.get_user_organization_id());
+
+ALTER TABLE public.problem_sequences ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Org members manage problem_sequences" ON public.problem_sequences;
+CREATE POLICY "Org members manage problem_sequences"
+  ON public.problem_sequences FOR ALL
+  USING (organization_id = public.get_user_organization_id())
+  WITH CHECK (organization_id = public.get_user_organization_id());
+
+-- 3. CHECK constraints on enum-like text columns
+ALTER TABLE public.team_invitations
+  DROP CONSTRAINT IF EXISTS team_invitations_status_check;
+ALTER TABLE public.team_invitations
+  ADD  CONSTRAINT team_invitations_status_check
+       CHECK (status IN ('pending', 'accepted', 'expired', 'cancelled', 'revoked'));
+
+ALTER TABLE public.team_invitations
+  DROP CONSTRAINT IF EXISTS team_invitations_role_check;
+ALTER TABLE public.team_invitations
+  ADD  CONSTRAINT team_invitations_role_check
+       CHECK (role IN ('owner', 'admin', 'manager', 'member', 'viewer'));
+
+ALTER TABLE public.billing_integrations
+  DROP CONSTRAINT IF EXISTS billing_integrations_subscription_status_check;
+ALTER TABLE public.billing_integrations
+  ADD  CONSTRAINT billing_integrations_subscription_status_check
+       CHECK (
+         subscription_status IS NULL
+         OR subscription_status IN (
+           'trialing', 'active', 'past_due', 'canceled',
+           'unpaid', 'incomplete', 'incomplete_expired', 'paused'
+         )
+       );
+
+-- 4. updated_at triggers
+DROP TRIGGER IF EXISTS update_billing_integrations_updated_at      ON public.billing_integrations;
+CREATE TRIGGER update_billing_integrations_updated_at
+  BEFORE UPDATE ON public.billing_integrations
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_organization_memberships_updated_at  ON public.organization_memberships;
+CREATE TRIGGER update_organization_memberships_updated_at
+  BEFORE UPDATE ON public.organization_memberships
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_organizations_updated_at             ON public.organizations;
+CREATE TRIGGER update_organizations_updated_at
+  BEFORE UPDATE ON public.organizations
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_profiles_updated_at                  ON public.profiles;
+CREATE TRIGGER update_profiles_updated_at
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_team_invitations_updated_at          ON public.team_invitations;
+CREATE TRIGGER update_team_invitations_updated_at
+  BEFORE UPDATE ON public.team_invitations
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- 5. Indexes on hot filter / FK columns
+CREATE INDEX IF NOT EXISTS idx_incidents_status                ON public.incidents (status);
+CREATE INDEX IF NOT EXISTS idx_incidents_created_by            ON public.incidents (created_by);
+CREATE INDEX IF NOT EXISTS idx_incidents_assigned_to           ON public.incidents (assigned_to)
+  WHERE assigned_to IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_incidents_org_status            ON public.incidents (organization_id, status);
+CREATE INDEX IF NOT EXISTS idx_incidents_org_created_at        ON public.incidents (organization_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_changes_status                  ON public.changes (status);
+CREATE INDEX IF NOT EXISTS idx_changes_requested_by            ON public.changes (requested_by);
+CREATE INDEX IF NOT EXISTS idx_changes_assigned_to             ON public.changes (assigned_to)
+  WHERE assigned_to IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_changes_org_status              ON public.changes (organization_id, status);
+CREATE INDEX IF NOT EXISTS idx_changes_org_scheduled_for       ON public.changes (organization_id, scheduled_for)
+  WHERE scheduled_for IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_problems_status                 ON public.problems (status);
+CREATE INDEX IF NOT EXISTS idx_problems_created_by             ON public.problems (created_by);
+CREATE INDEX IF NOT EXISTS idx_problems_assigned_to            ON public.problems (assigned_to)
+  WHERE assigned_to IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_problems_org_status             ON public.problems (organization_id, status);
+
+CREATE INDEX IF NOT EXISTS idx_team_invitations_organization   ON public.team_invitations (organization_id);
+CREATE INDEX IF NOT EXISTS idx_team_invitations_email          ON public.team_invitations (email);
+CREATE INDEX IF NOT EXISTS idx_team_invitations_status         ON public.team_invitations (status);
+CREATE INDEX IF NOT EXISTS idx_team_invitations_expires_at     ON public.team_invitations (expires_at)
+  WHERE status = 'pending';
+
+CREATE INDEX IF NOT EXISTS idx_comments_org_created_at         ON public.comments (organization_id, created_at DESC);
+
+-- 6. team_invitations.organization_id NOT NULL
+DO $hardening$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name   = 'team_invitations'
+      AND column_name  = 'organization_id'
+      AND is_nullable  = 'YES'
+  ) THEN
+    DELETE FROM public.team_invitations WHERE organization_id IS NULL;
+    ALTER TABLE public.team_invitations
+      ALTER COLUMN organization_id SET NOT NULL;
+  END IF;
+END
+$hardening$;
+
+COMMIT;
+
+
 --
 -- PostgreSQL database dump complete
 --
