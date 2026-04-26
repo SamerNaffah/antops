@@ -4,15 +4,15 @@
   "description": "AI-powered IT operations platform with incident, problem, and change management",
   "private": false,
   "license": "MIT",
-  "author": "ANTOPS (https://github.com/antopshq)",
+  "author": "Samer Naffah (https://github.com/SamerNaffah)",
   "repository": {
     "type": "git",
-    "url": "https://github.com/antopshq/antops.git"
+    "url": "https://github.com/SamerNaffah/antops.git"
   },
   "bugs": {
-    "url": "https://github.com/antopshq/antops/issues"
+    "url": "https://github.com/SamerNaffah/antops/issues"
   },
-  "homepage": "https://github.com/antopshq/antops#readme",
+  "homepage": "https://github.com/SamerNaffah/antops#readme",
   "keywords": [
     "itil",
     "incident-management",

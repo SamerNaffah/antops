@@ -197,9 +197,9 @@ This is a future enhancement, not currently available.
 ## Support
 
 - **Documentation:** This file, README.md, DATABASE.md
-- **Issues:** [GitHub Issues](https://github.com/antopshq/antops/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/antopshq/antops/discussions)
-- **Email:** samer.naffah@antopshq.com
+- **Issues:** [GitHub Issues](https://github.com/SamerNaffah/antops/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/SamerNaffah/antops/discussions)
+- **Email:** naffahsamer@gmail.com
 
 ## Future Plans
 

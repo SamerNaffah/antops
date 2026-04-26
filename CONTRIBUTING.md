@@ -48,7 +48,7 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 
 ```bash
 # Clone your fork
-git clone https://github.com/antopshq/antops.git
+git clone https://github.com/SamerNaffah/antops.git
 cd antops/antops-app
 
 # Install dependencies
@@ -281,9 +281,9 @@ CREATE INDEX idx_incidents_priority ON incidents(priority);
 
 ## Questions?
 
-- Check existing [issues](https://github.com/antopshq/antops/issues)
-- Start a [discussion](https://github.com/antopshq/antops/discussions)
-- Email us at samer.naffah@antopshq.com
+- Check existing [issues](https://github.com/SamerNaffah/antops/issues)
+- Start a [discussion](https://github.com/SamerNaffah/antops/discussions)
+- Email us at naffahsamer@gmail.com
 
 ## License
 
