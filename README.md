@@ -9,7 +9,7 @@
 
 Antops is a modern, real-time IT operations platform. It ships the ITIL processes your on-call team actually uses (incident, problem, change management), a visual infrastructure graph, live collaboration, and optional AI-powered risk scoring.
 
-> **Status.** Antops is early-stage OSS. It runs, but it is under active refactor — see [`../ANTOPS_AUDIT.md`](../ANTOPS_AUDIT.md) for the current punch list. Feedback and PRs welcome.
+> **Status.** Antops is early-stage OSS. It runs, but it is under active refactor — see [`ANTOPS_AUDIT.md`](ANTOPS_AUDIT.md) for the current punch list. Feedback and PRs welcome.
 
 ---
 
@@ -29,7 +29,7 @@ cp .env.selfhosted.example .env
 make up
 ```
 
-Then open <http://localhost:3000>.
+Then open <http://localhost:3000>. Full guide: [`docs/self-hosting.md`](docs/self-hosting.md).
 
 Common commands (`make help` for the full list):
 
@@ -47,7 +47,7 @@ Uses a free Supabase project instead of local Postgres/storage. No Docker.
 
 ```bash
 git clone https://github.com/SamerNaffah/antops.git
-cd antops/antops-app
+cd antops
 cp .env.example .env.local
 # fill in NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
 # SUPABASE_SERVICE_ROLE_KEY from your Supabase project's API settings
@@ -55,7 +55,7 @@ npm install
 npm run dev
 ```
 
-Then open <http://localhost:3000>. On first run, paste `complete-schema.sql` into Supabase's SQL Editor and run it once to create all tables and policies.
+Then open <http://localhost:3000>. On first run, paste `complete-schema.sql` into Supabase's SQL Editor and run it once to create all tables and policies. Full guide: [`docs/deployment.md`](docs/deployment.md).
 
 ---
 
@@ -86,9 +86,7 @@ Then open <http://localhost:3000>. On first run, paste `complete-schema.sql` int
 
 ## Tech stack
 
-Next.js 15 (App Router) • React 19 • TypeScript 5 • PostgreSQL (Supabase or self-hosted) • Socket.io • Tiptap editor • ReactFlow • Tailwind v4 • shadcn/ui (Radix) • OpenAI (optional).
-
-For the deep architecture, see `docs/architecture.md` _(coming — see audit)_.
+Next.js 15 (App Router) • React 19 • TypeScript 5 • PostgreSQL (Supabase or self-hosted) • Socket.io • Tiptap editor • ReactFlow • Tailwind v4 • shadcn/ui (Radix) • OpenAI (optional). The deeper tour: [`docs/architecture.md`](docs/architecture.md).
 
 ---
 
@@ -96,29 +94,48 @@ For the deep architecture, see `docs/architecture.md` _(coming — see audit)_.
 
 ```
 antops/
-├── Dockerfile
-├── docker-compose.yml
-├── .env.selfhosted.example       # Docker path
-├── Makefile                      # make up / down / logs / psql
-├── docker/                       # Postgres init scripts
-└── antops-app/                   # the Next.js application
-    ├── .env.example              # hosted-Supabase path
-    ├── package.json
-    ├── next.config.ts
-    ├── server.js                 # custom server (Next.js + Socket.io)
-    ├── complete-schema.sql       # single-file DB schema (28 tables, RLS, triggers)
-    ├── src/
-    │   ├── app/                  # App Router pages + API routes
-    │   ├── components/           # UI
-    │   └── lib/                  # supabase clients, store, openai, websocket
-    └── public/
+├── README.md
+├── LICENSE                       MIT
+├── TRADEMARK.md                  ANTOPS name + logo policy
+├── CONTRIBUTING.md
+├── CODE_OF_CONDUCT.md
+├── SECURITY.md                   how to report vulns
+├── CHANGELOG.md
+├── ANTOPS_AUDIT.md               current punch list
+│
+├── Dockerfile                    multi-stage, non-root, healthcheck
+├── docker-compose.yml            postgres + minio + redis + app
+├── Makefile                      make up / down / logs / psql / clean
+├── .dockerignore
+├── .env.example                  hosted-Supabase mode
+├── .env.selfhosted.example       Docker / self-hosted mode
+│
+├── complete-schema.sql           single-file DB schema (28 tables, RLS, triggers)
+├── server.js                     custom Next.js server (HTTP + Socket.io)
+│
+├── docker/                       Postgres init scripts
+├── supabase/migrations/          versioned SQL changes
+├── docs/
+│   ├── README.md                 doc index
+│   ├── self-hosting.md
+│   ├── deployment.md
+│   ├── architecture.md
+│   ├── database.md
+│   ├── api.md
+│   ├── comparison.md
+│   ├── integrations/
+│   └── legal/
+└── src/
+    ├── app/                      App Router pages + API routes
+    ├── components/               UI
+    └── lib/                      supabase clients, store, openai, websocket
 ```
 
 ---
 
 ## Configuration
 
-Self-hosted mode (`.env.selfhosted.example`):
+Self-hosted (`.env.selfhosted.example`):
 
 | Variable | Required | What it does |
 |---|---|---|
@@ -130,7 +147,7 @@ Self-hosted mode (`.env.selfhosted.example`):
 | `OPENAI_API_KEY` | no | Enables AI features |
 | `ANTHROPIC_API_KEY` | no | Alternative AI provider |
 
-Supabase mode (`antops-app/.env.example`):
+Supabase (`.env.example`):
 
 | Variable | Required | What it does |
 |---|---|---|
@@ -146,18 +163,18 @@ Supabase mode (`antops-app/.env.example`):
 
 PRs welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md). For anything non-trivial, open an issue first.
 
-Bug reports and feature requests: <https://github.com/SamerNaffah/antops/issues>
+Bug reports and feature requests: <https://github.com/SamerNaffah/antops/issues>. Questions and ideas: [Discussions](https://github.com/SamerNaffah/antops/discussions).
 
 ---
 
 ## Security
 
-See [`SECURITY.md`](SECURITY.md) for reporting vulnerabilities. **Do not** file security issues on the public tracker.
+See [`SECURITY.md`](SECURITY.md) for reporting vulnerabilities. **Do not** file security issues on the public tracker — use [GitHub Security Advisories](https://github.com/SamerNaffah/antops/security/advisories/new).
 
-A known-issues list (with severity + planned fixes) lives in `ANTOPS_AUDIT.md` at the repo root.
+A known-issues list (with severity + planned fixes) lives in [`ANTOPS_AUDIT.md`](ANTOPS_AUDIT.md).
 
 ---
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
+MIT — see [`LICENSE`](LICENSE). Note the trademark carve-out in [`TRADEMARK.md`](TRADEMARK.md): the code is yours under MIT; the ANTOPS name and logo are not.
