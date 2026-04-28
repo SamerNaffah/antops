@@ -1,0 +1,46 @@
+# Dockerfile build context hygiene.
+# Anything listed here will NOT be copied into the image. The goal is to keep
+# the image small and the build fast.
+
+# Node / Next build artifacts
+**/node_modules
+**/.next
+**/.turbo
+**/coverage
+**/out
+**/dist
+
+# VCS
+.git
+.gitignore
+**/.github
+
+# Env files — never ship real secrets into the image.
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.selfhosted.example
+
+# Editor / OS junk
+**/.DS_Store
+**/.vscode
+**/.idea
+**/*.swp
+**/*.swo
+
+# Logs
+**/logs
+**/*.log
+
+# Docs / meta (read from repo on host, not from inside the image)
+**/*.md
+!**/README.md
+**/LICENSE
+docs
+**/.fuse_hidden*
+
+# Tests / tooling artifacts
+**/.vitest
+**/.playwright
+**/playwright-report
+**/test-results
