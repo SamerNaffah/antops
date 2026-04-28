@@ -1,0 +1,49 @@
+name: Feature request
+description: Suggest a change or new capability.
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing: search existing issues. If something close exists, comment there
+        instead of opening a duplicate.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the user-facing problem, not the implementation. "Why" before "what."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How you'd like it to work. Mockups, examples, snippets welcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What else did you look at? Why didn't it fit?
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      multiple: true
+      options:
+        - Incident management
+        - Problem management
+        - Change management
+        - Infrastructure / topology
+        - Integrations
+        - AI features
+        - Self-hosting / Docker
+        - Documentation
+        - API
+        - Other

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discussions
+    url: https://github.com/SamerNaffah/antops/discussions
+    about: Questions, ideas, and general conversation belong here, not in issues.
+  - name: Security vulnerabilities
+    url: https://github.com/SamerNaffah/antops/security/advisories/new
+    about: Report privately via GitHub Security Advisories. See SECURITY.md.

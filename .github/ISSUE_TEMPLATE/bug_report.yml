@@ -1,0 +1,74 @@
+name: Bug report
+description: Something doesn't work the way it should.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please give enough detail that someone else can reproduce
+        the bug locally — vague reports tend to sit unanswered.
+
+        For security issues, **do not file here.** Email the address in
+        [`SECURITY.md`](../../SECURITY.md) instead.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A short, factual description. Screenshots welcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal reproduction steps. The smaller the better.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: How are you running Antops?
+      options:
+        - Self-hosted (Docker Compose)
+        - Hosted Supabase
+        - Local dev (npm run dev)
+        - Other (describe below)
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      description: Output of `git rev-parse --short HEAD` or the release tag.
+    validations:
+      required: false
+
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: Node version, OS, browser. `node -v && uname -a` is fine.
+      render: shell
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Server logs, browser console, network errors. Redact secrets.
+      render: shell
