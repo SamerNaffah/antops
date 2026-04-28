@@ -94,15 +94,10 @@ ANTOPS is **open source** but requires external services to run. This means the 
 
 ## Self-Hosted Option
 
-**Status:** Not currently implemented
-
-If you want to run ANTOPS **completely self-hosted** (without Supabase, using your own PostgreSQL):
-- See `SELF_HOSTING_MIGRATION_PLAN.md` (in repository root)
-- Estimated implementation time: 12-20 days
-- Requires database migration work
-- More complex maintenance
-
-This is a future enhancement, not currently available.
+**Status:** Alpha — see [`self-hosting.md`](self-hosting.md) for the
+Docker Compose path (Postgres + MinIO + Redis + the app). Stands up on a
+single host without any SaaS account. Tracking the remaining
+Supabase-vs-NextAuth ambiguity in `ANTOPS_AUDIT.md` §3.2.
 
 ## What's Included vs What You Need
 
