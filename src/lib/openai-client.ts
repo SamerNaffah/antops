@@ -33,10 +33,6 @@ class OpenAIClient {
   private config: OpenAIConfig
 
   constructor(config: Partial<OpenAIConfig> = {}) {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY environment variable is required')
-    }
-
     this.config = {
       model: 'gpt-4o-mini',
       maxTokens: 1000,
@@ -44,6 +40,13 @@ class OpenAIClient {
       timeout: 30000, // 30 seconds
       maxRetries: 3,
       ...config
+    }
+
+    if (!process.env.OPENAI_API_KEY) {
+      // Defer the hard failure to first actual use so the module can be
+      // imported at build time without OPENAI_API_KEY present.
+      this.client = null as unknown as OpenAI
+      return
     }
 
     this.client = new OpenAI({
@@ -67,6 +70,10 @@ class OpenAIClient {
     cost: number
   }> {
     const startTime = Date.now()
+    if (!this.client) {
+      throw new Error('OPENAI_API_KEY environment variable is required')
+    }
+
     const requestConfig = { ...this.config, ...options }
 
     try {
