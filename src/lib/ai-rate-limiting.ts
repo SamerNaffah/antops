@@ -25,10 +25,11 @@ export async function checkAITokens(userId: string, requiredTokens: number = 1):
   resetTime: Date
 } | null> {
   try {
-    const { data, error } = await supabaseAdmin.rpc('check_ai_scan_tokens', {
+    const { data: _data, error } = await supabaseAdmin.rpc('check_ai_scan_tokens', {
       user_uuid: userId,
       required_tokens: requiredTokens
     })
+    const data = _data as any[] | null
 
     if (error) {
       console.error('Error checking AI tokens:', error)
@@ -57,10 +58,11 @@ export async function checkAITokens(userId: string, requiredTokens: number = 1):
  */
 export async function consumeAITokens(userId: string, tokensToConsume: number = 1): Promise<TokenConsumptionResult | null> {
   try {
-    const { data, error } = await supabaseAdmin.rpc('consume_ai_scan_tokens', {
+    const { data: _data, error } = await supabaseAdmin.rpc('consume_ai_scan_tokens', {
       user_uuid: userId,
       tokens_to_consume: tokensToConsume
     })
+    const data = _data as any[] | null
 
     if (error) {
       console.error('Error consuming AI tokens:', error)
@@ -89,9 +91,10 @@ export async function consumeAITokens(userId: string, tokensToConsume: number = 
  */
 export async function getUserAITokenStatus(userId: string): Promise<AITokenStatus | null> {
   try {
-    const { data, error } = await supabaseAdmin.rpc('get_user_ai_scan_status', {
+    const { data: _data, error } = await supabaseAdmin.rpc('get_user_ai_scan_status', {
       user_uuid: userId
     })
+    const data = _data as any[] | null
 
     if (error) {
       console.error('Error getting AI token status:', error)
