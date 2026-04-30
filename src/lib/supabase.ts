@@ -1,9 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 
-// Client-side Supabase client — lazy singleton so the module can be imported
-// at build time without NEXT_PUBLIC_SUPABASE_URL being present.
+// ---------------------------------------------------------------------------
+// Client-side Supabase client — lazy singleton.
+//
+// createClient() must NOT be called at module load time: next build executes
+// all route modules during "Collecting page data" and the Supabase constructor
+// throws "supabaseUrl is required" when env vars are absent from the build
+// context (they're runtime-only). Call getSupabaseClient() instead.
+// ---------------------------------------------------------------------------
 let _supabase: ReturnType<typeof createClient> | null = null
+
 export function getSupabaseClient() {
   if (!_supabase) {
     _supabase = createClient(
@@ -13,14 +20,24 @@ export function getSupabaseClient() {
   }
   return _supabase
 }
-/** @deprecated Use getSupabaseClient() — avoids build-time init crash */
-export const supabase = new Proxy({} as ReturnType<typeof createClient>, {
-  get(_t, prop) {
-    return (getSupabaseClient() as any)[prop]
-  },
-})
 
+// Convenience alias — same lazy singleton, fully typed.
+export const supabase = {
+  get from() { return getSupabaseClient().from.bind(getSupabaseClient()) },
+  get auth() { return getSupabaseClient().auth },
+  get storage() { return getSupabaseClient().storage },
+  get functions() { return getSupabaseClient().functions },
+  get rpc() { return getSupabaseClient().rpc.bind(getSupabaseClient()) },
+  get realtime() { return getSupabaseClient().realtime },
+  get channel() { return getSupabaseClient().channel.bind(getSupabaseClient()) },
+  get removeChannel() { return getSupabaseClient().removeChannel.bind(getSupabaseClient()) },
+  get removeAllChannels() { return getSupabaseClient().removeAllChannels.bind(getSupabaseClient()) },
+  get getChannels() { return getSupabaseClient().getChannels.bind(getSupabaseClient()) },
+} as unknown as ReturnType<typeof createClient>
+
+// ---------------------------------------------------------------------------
 // Server-side Supabase client (for authenticated requests)
+// ---------------------------------------------------------------------------
 export async function createSupabaseServerClient() {
   const { cookies } = await import('next/headers')
   const cookieStore = await cookies()
@@ -44,8 +61,11 @@ export async function createSupabaseServerClient() {
   )
 }
 
-// Service role client for server-side operations (bypasses RLS) — lazy singleton
+// ---------------------------------------------------------------------------
+// Service role client — lazy singleton, bypasses RLS.
+// ---------------------------------------------------------------------------
 let _supabaseAdmin: ReturnType<typeof createClient> | null = null
+
 export function getSupabaseAdmin() {
   if (!_supabaseAdmin) {
     _supabaseAdmin = createClient(
@@ -61,10 +81,17 @@ export function getSupabaseAdmin() {
   }
   return _supabaseAdmin
 }
-/** @deprecated Use getSupabaseAdmin() — avoids build-time init crash */
-export const supabaseAdmin = new Proxy({} as ReturnType<typeof createClient>, {
-  get(_t, prop) {
-    return (getSupabaseAdmin() as any)[prop]
-  },
-})
 
+// Convenience alias — same lazy singleton, fully typed.
+export const supabaseAdmin = {
+  get from() { return getSupabaseAdmin().from.bind(getSupabaseAdmin()) },
+  get auth() { return getSupabaseAdmin().auth },
+  get storage() { return getSupabaseAdmin().storage },
+  get functions() { return getSupabaseAdmin().functions },
+  get rpc() { return getSupabaseAdmin().rpc.bind(getSupabaseAdmin()) },
+  get realtime() { return getSupabaseAdmin().realtime },
+  get channel() { return getSupabaseAdmin().channel.bind(getSupabaseAdmin()) },
+  get removeChannel() { return getSupabaseAdmin().removeChannel.bind(getSupabaseAdmin()) },
+  get removeAllChannels() { return getSupabaseAdmin().removeAllChannels.bind(getSupabaseAdmin()) },
+  get getChannels() { return getSupabaseAdmin().getChannels.bind(getSupabaseAdmin()) },
+} as unknown as ReturnType<typeof createClient>
