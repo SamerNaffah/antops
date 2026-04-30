@@ -109,11 +109,13 @@ class WebSocketServer {
       }
 
       // Get user profile with organization info
-      const { data: profile, error: profileError } = await supabase
+      const { data: _profile, error: profileError } = await supabase
         .from('profiles')
         .select('full_name, email, organization_id')
         .eq('id', user.id)
         .single()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const profile: any = _profile
 
       if (profileError || !profile) {
         return null
@@ -121,9 +123,9 @@ class WebSocketServer {
 
       return {
         id: user.id,
-        organizationId: profile.organization_id,
-        name: profile.full_name,
-        email: profile.email
+        organizationId: profile.organization_id as string,
+        name: profile.full_name as string,
+        email: profile.email as string
       }
     } catch (error) {
       console.error('User authentication error:', error)

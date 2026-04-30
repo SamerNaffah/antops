@@ -176,17 +176,19 @@ export async function validateApiToken(token: string, clientIp?: string): Promis
   const tokenHash = hashToken(token)
   
   // Find active token
-  const { data: tokensData, error } = await supabase
+  const { data: _tokensData, error } = await supabase
     .from('api_tokens')
     .select('*')
     .eq('token_hash', tokenHash)
     .eq('is_active', true)
-  
+  const tokensData = _tokensData as any[] | null
+
   if (error || !tokensData || tokensData.length === 0) {
     return { isValid: false }
   }
-  
-  const tokenData = tokensData[0] // Get first matching token
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tokenData: any = tokensData[0]
   
   // Check if token is expired
   if (tokenData.expires_at && new Date(tokenData.expires_at) <= new Date()) {

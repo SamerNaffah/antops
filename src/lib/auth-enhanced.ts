@@ -116,12 +116,12 @@ async function authenticateWithApiToken(authHeader: string, request: NextRequest
   // Get user profile data - use admin client to bypass RLS
   const { supabaseAdmin } = await import('./supabase')
   
-  const { data: profiles, error: profileError } = await supabaseAdmin
+  const { data: _profiles, error: profileError } = await supabaseAdmin
     .from('profiles')
     .select('full_name, email, organization_id, role')
     .eq('id', tokenValidation.userId)
-  
-  const profile = profiles?.[0]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const profile: any = (_profiles as any[])?.[0]
   
   if (!profile) {
     return null
