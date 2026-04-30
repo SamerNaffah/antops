@@ -6,8 +6,19 @@ import { createSupabaseServerClient } from '@/lib/supabase'
 import { withAIRateLimit } from '@/lib/ai-rate-limiting'
 import OpenAI from 'openai'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+// Lazy singleton — defer construction to request time so next build can
+// import this module without OPENAI_API_KEY being present in the build env.
+let _openai: OpenAI | null = null
+function getOpenAI() {
+  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  return _openai
+}
+const openai = new Proxy({} as OpenAI, {
+  get(_t, prop) {
+    const client = getOpenAI()
+    const val = (client as any)[prop]
+    return typeof val === 'function' ? val.bind(client) : val
+  },
 })
 
 interface ComponentInsightsRequest {
